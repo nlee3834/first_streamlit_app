@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 import snowflake.connector
+from urllib.error import URLError
 
 st.title("My Mom's New Healthy Diner")
 
@@ -23,23 +24,37 @@ fruits_to_show = my_fruit_list.loc[fruits_selected]
 # Display the table on the page.
 st.dataframe(fruits_to_show)
 
+# create the repeatable code block (called a function)
+def get_fruityvice_data(this_fruit_choice):
+  fruityvice_response = requests.get("https://fruityvice.com/api/fruit/" + this_fruit_choice)
+  fruityvice_normalized = pd.json_normalize(fruityvice_response.json())
+  return fruityvice_normalized
+
 # New Section to display fruityvice api response
 st.header('Fruityvice Fruit Advice!')
-fruit_choice = st.text_input('What fruit would you like information about?', 'Kiwi')
-# User can choose fruit
-st.write('The user entered', fruit_choice)
+try :
+  fruit_choice = st.text_input('What fruit would you like information about?')
+  if not fruit_choice:
+    st.error("Please select a fruit to get information.")
+  else:
+    back_from_function = get_fruityvice_data(fruit_choice)
+    st.dataframe(back_from_function)
 
-fruityvice_response = requests.get("https://fruityvice.com/api/fruit/" + fruit_choice)
-
-# take the json verion and normalize it
-fruityvice_normalized = pd.json_normalize(fruityvice_response.json())
-# Output it the screen as a table
-st.dataframe(fruityvice_normalized)
+except URLError as e:
+  st.error()
+# don't run anything past here while we troubleshoot
+st.stop()
 
 # test / use connector
 my_cnx = snowflake.connector.connect(**st.secrets["snowflake"])
 my_cur = my_cnx.cursor()
 my_cur.execute("SELECT * FROM FRUIT_LOAD_LIST")
-my_data_row = my_cur.fetchone()
-st.text("The fruit load list contains:")
-st.text(my_data_row)
+my_data_rows = my_cur.fetchall()
+st.header("The fruit load list contains:")
+st.dataframe(my_data_rows)
+
+# Allow the end user to add a fruit to the list
+add_choice = st.text_input('What fruit would you like to add', 'jackfruit')
+st.write('Thanks for adding ', add_choice)
+
+# This will not work correctly 
