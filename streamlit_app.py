@@ -40,8 +40,6 @@ try :
     back_from_function = get_fruityvice_data(fruit_choice)
     st.dataframe(back_from_function)
 
-except URLError as e:
-  st.error()
 
 # test / use connector
 st.header("The fruit load list contains:")
