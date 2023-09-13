@@ -42,8 +42,6 @@ try :
 
 except URLError as e:
   st.error()
-# don't run anything past here while we troubleshoot
-st.stop()
 
 # test / use connector
 st.header("The fruit load list contains:")
@@ -60,7 +58,15 @@ if st.button('Get Fruit Load List'):
   st.dataframe(my_data_rows)
 
 # Allow the end user to add a fruit to the list
-add_choice = st.text_input('What fruit would you like to add', 'jackfruit')
-st.write('Thanks for adding ', add_choice)
+def insert_row_snowflake(new_fruit):
+  with my_cnx.cursor() as my_cur:
+    my_cur.execute("insert into fruit_load_list values ('" + new_fruit +"')")
+    return "Thanks for adding " + new_fruit
+
+add_my_fruit = st.text_input('What fruit would you like to add?')
+if st.button('Add a Fruit to the List'):
+  my_cnx = snowflake.connector.connect(**st.secrets["snowflake"])
+  back_from_function = insert_row_snowflake(add_my_fruit)
+  st.text('back_from_function')
 
 # This will not work correctly 
